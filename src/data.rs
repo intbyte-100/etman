@@ -1,10 +1,16 @@
-use crate::chunk::Chunk;
+use crate::stream::Stream;
 
-pub trait StreamData {
-    
+pub const CHUNK_SIZE: usize = 1024 * 64;
+
+
+
+pub struct Chunk {
+    data: Vec<String>,
+    size: usize
 }
 
-pub enum Data {
-    Finite(Chunk),
-    Stream(Box<dyn StreamData>)
+impl Chunk {
+    pub fn new() -> Self {
+        Self { data: Vec::default(), size: 0 }
+    }
 }

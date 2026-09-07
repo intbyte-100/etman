@@ -1,5 +1,5 @@
-use crate::data::Data;
+use crate::pipeline::PipelineSignal;
 
-trait Processor {
-    fn process(&self, data: Data) -> Data;
+pub trait Processor {
+    fn process(&self, data: PipelineSignal) -> PipelineSignal;
 }

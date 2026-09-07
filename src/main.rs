@@ -1,9 +1,16 @@
+use std::{fs::File, io::{BufRead, BufReader}};
+
+use crate::{pipeline::{Pipeline, PipelineUnit}, stream::{ReadStream, StreamSignal}};
+
 mod data;
 mod generator;
 mod filter;
 mod processor;
-mod chunk;
+mod stream;
+mod pipeline;
 
 fn main() {
-    println!("Hello, world!");
+    let stream = ReadStream::new(File::open("Cargo.toml").unwrap());
+
+    println!("{}", size_of::<StreamSignal>());
 }
