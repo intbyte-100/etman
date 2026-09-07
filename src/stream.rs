@@ -2,7 +2,7 @@ use std::{
     fmt::{Display, write},
     fs::File,
     io::{BufRead, BufReader, ErrorKind, Read, Seek},
-    result,
+    iter, 
 };
 
 use crate::data::CHUNK_SIZE;
@@ -65,7 +65,26 @@ struct ChainedSeacrhStreamStruct<T: BufRead> {
 
 impl<T: BufRead> Stream for ChainedSeacrhStreamStruct<T> {
     fn read_until(&mut self, searcher: &Searcher) -> Result<StreamSignal, Error> {
-        todo!()
+        read_until(&mut self.read, CHUNK_SIZE, |available, buf| {
+            let founded = self.searchers
+                .iter()
+                .map(|it| it as &Searcher)
+                .chain(iter::once(searcher)).find_map(|it| {
+                    it(buf)
+                });
+
+
+            match founded {
+                Some(i) => {
+                    buf.extend_from_slice(&available[..=i]);
+                    (true, i + 1, Some(ChainIndex(i)))
+                }
+                None => {
+                    buf.extend_from_slice(available);
+                    (false, available.len(), None)
+                }
+            }
+        })
     }
 
     fn try_materialize(&mut self, searcher: &Searcher) -> Result<String, Error> {
@@ -85,7 +104,7 @@ impl<T: BufRead + 'static> ChainedSearchStream for ChainedSeacrhStreamStruct<T> 
 }
 
 fn read_until<F>(
-    buf_reader: &mut BufReader<impl Read>,
+    buf_reader: &mut impl BufRead,
     limit: usize,
     mut handler: F,
 ) -> Result<StreamSignal, Error>
@@ -127,7 +146,6 @@ where
     }
 }
 
-
 pub struct ReadStream {
     buf_reader: BufReader<Box<dyn Read>>,
 }
@@ -139,7 +157,11 @@ impl ReadStream {
         }
     }
 
-    fn inner_read_until(&mut self, limit: usize, searcher: &Searcher) -> Result<StreamSignal, Error> {
+    fn inner_read_until(
+        &mut self,
+        limit: usize,
+        searcher: &Searcher,
+    ) -> Result<StreamSignal, Error> {
         read_until(
             &mut self.buf_reader,
             limit,
@@ -177,14 +199,11 @@ impl Stream for ReadStream {
     }
 }
 
-
-pub struct PrefixedChaindedStream {
-    
-} 
+pub struct PrefixedChaindedStream {}
 
 impl PrefixedChaindedStream {
-    pub fn new(prefix: String, stream: Box<dyn Stream>, len: usize) -> Self {
-        Self {  }
+    pub fn new(prefix: String, stream: Box<dyn Stream>) -> Self {
+        Self {}
     }
 }
 impl Stream for PrefixedChaindedStream {
